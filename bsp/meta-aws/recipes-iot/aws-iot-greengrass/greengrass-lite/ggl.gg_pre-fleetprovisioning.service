@@ -1,0 +1,27 @@
+[Unit]
+Description=Greengrass Lite pre Fleet Provisioning Service
+After=systemd-time-wait-sync.service
+After=network-online.target
+Wants=network-online.target
+Before=ggl.core.ggconfigd.service
+Before=ggl.gg_fleetprovisioning.service
+ConditionPathExists=!/var/lib/greengrass/credentials
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '\
+    while true; do \
+        default_iface=$(ip route | grep default | cut -d" " -f5 | head -n1); \
+        [ -n "$default_iface" ] && [ -f "/sys/class/net/$default_iface/address" ] && break; \
+        sleep 1; \
+    done; \
+    mac_address=$(cat /sys/class/net/"$default_iface"/address | tr ":" "_"); \
+    sed -i "s/<unique>/$mac_address/g" "/etc/greengrass/config.d/fleetprovisioning.yaml";'
+TimeoutSec=infinity
+SuccessExitStatus=0 1 15
+User=root
+Group=root
+RemainAfterExit=true
+
+[Install]
+WantedBy=greengrass-lite.target

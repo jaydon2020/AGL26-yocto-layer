@@ -1,0 +1,9 @@
+build*/
+qemux86-64/
+raspberrypi5/
+tmp/
+sstate-cache/
+downloads/
+cache/
+*.log
+bitbake-cookerdaemon.log

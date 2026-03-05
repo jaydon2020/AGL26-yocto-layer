@@ -1,0 +1,77 @@
+name: macos
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, closed ]
+    paths-ignore:
+      - .github/workflows/windows.yaml
+      - .github/workflows/ubuntu.yml
+      - .github/workflows/ubuntu-legacy.yml
+      - .github/workflows/fedora.yml
+      - '**/*.md'
+  release:
+    types: [ published, created, edited ]
+  workflow_dispatch:
+  schedule:
+    # daily
+    - cron:  '0 0 * * *'
+
+jobs:
+
+  run:
+
+    env:
+      NONINTERACTIVE: 1
+      HOMEBREW_NO_AUTO_UPDATE: 1
+
+    strategy:
+      matrix:
+        os: [ macos-14, macos-15 ]
+
+    runs-on: ${{ matrix.os }}
+
+    if: "!contains(github.event.pull_request.labels.*.name, 'ci: skip macos') && !contains(github.event.head_commit.message, '[skip macos]')"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Check Environment
+        run: |
+          echo "Running on macOS version: $(sw_vers -productVersion)"
+          echo "Running on architecture: $(uname -m)"
+          echo "Current directory: $(pwd)"
+          echo "Environment variables:"
+          env
+          
+      - name: Brew fixup
+        run: |
+          brew upgrade |true
+          brew cleanup |true
+          brew doctor |true
+          ruby -v
+          
+      - name: Create workspace
+        shell: bash
+        env:
+          CI: true
+          GITHUB_ACTIONS: true
+        run: |
+          env
+          cd $GITHUB_WORKSPACE
+          pwd; ls -la
+          ./flutter_workspace.py
+          cat ./setup_env.sh
+
+      - name: Test workspace
+        shell: bash
+        env:
+          CI: true
+          GITHUB_ACTIONS: true
+        run: |
+          env
+          cd $GITHUB_WORKSPACE
+          pwd; ls -la
+          . ./setup_env.sh
+          dart --version

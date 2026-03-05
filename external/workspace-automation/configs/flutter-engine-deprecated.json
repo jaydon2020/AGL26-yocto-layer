@@ -1,0 +1,113 @@
+{
+    "id": "flutter-engine-deprecated",
+    "load": false,
+    "supported_archs": [
+        "aarch64",
+        "arm64",
+        "x86_64"
+    ],
+    "supported_host_types": [
+        "ubuntu",
+        "fedora"
+    ],
+    "type": "dependency",
+    "env": {
+        "PATH": "${FLUTTER_WORKSPACE}/app/depot_tools:${PATH}",
+        "RUNTIME_MODE": "debug",
+        "DEPOT_TOOLS": "${FLUTTER_WORKSPACE}/app/depot_tools",
+        "ENGINE_ROOT": "${FLUTTER_WORKSPACE}/app/engine",
+        "VPYTHON_VIRTUALENV_ROOT": "${ENGINE_ROOT}/.vpython",
+        "ENGINE_SRC_DIR_RELATIVE": "src",
+        "ENGINE_SRC_DIR": "${ENGINE_ROOT}/${ENGINE_SRC_DIR_RELATIVE}",
+        "ENGINE_BUILD_FLAGS": "--runtime-mode=${RUNTIME_MODE} --embedder-for-target --enable-fontconfig --disable-desktop-embeddings --no-build-embedder-examples --enable-impeller-3d --no-lto --no-goma --no-rbe --no-stripped --no-enable-unittests",
+        "ENGINE_BUILD_DIR": "${ENGINE_SRC_DIR}/out/host_debug",
+        "GN_ARGS_FILE": "${ENGINE_BUILD_DIR}/args.gn",
+        "GN_ARGS_APPEND": "",
+        "PATCH_FOLDER": "${FLUTTER_WORKSPACE}/patches/flutter-engine-deprecated"
+    },
+    "src": [],
+    "runtime": {
+        "gclient_config": {
+            "path": "${ENGINE_ROOT}",
+            "managed": false,
+            "name": "src/flutter",
+            "url": "https://github.com/flutter/engine.git",
+            "custom_vars": {
+                "download_android_deps": false,
+                "download_windows_deps": false,
+                "download_linux_deps": true,
+                "download_emsdk": false
+            },
+            "deps_file": "DEPS",
+            "safesync_url": ""
+        },
+        "pre-requisites": {
+            "aarch64": {
+                "ubuntu": {
+                    "cmds": [
+                        "sudo apt-get install -yq pkg-config libfreetype-dev git"
+                    ]
+                }
+            },
+            "x86_64": {
+                "ubuntu": {
+                    "cmds": [
+                        "sudo apt-get install -yq pkg-config libfreetype-dev git"
+                    ]
+                },
+                "fedora": {
+                    "cmds": [
+                        "sudo dnf install -y pkg-config freetype-devel git"
+                    ]
+                }
+            }
+        },
+        "post_cmds": [
+            {
+                "cwd": "${ENGINE_SRC_DIR}",
+                "cmds": [
+                    "git reset --hard",
+                    "git apply ${PATCH_FOLDER}/0001-clang-toolchain.patch"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_ROOT}",
+                "cmds": [
+                    "gclient sync -D -R --revision ${FLUTTER_ENGINE_VERSION} -j${HARDWARE_THREADS} -v"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_SRC_DIR}/flutter",
+                "cmds": [
+                    "git reset --hard"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_SRC_DIR}",
+                "cmds": [
+                    "./flutter/tools/gn ${ENGINE_BUILD_FLAGS}",
+                    "echo ${GN_ARGS_APPEND} >> ${GN_ARGS_FILE}",
+                    "${AUTONINJA} -C ${ENGINE_BUILD_DIR}"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_BUILD_DIR}",
+                "cmds": [
+                    "rm -rf ${PLATFORM_ID_DIR}/bundle | true",
+                    "mkdir -p ${PLATFORM_ID_DIR}/bundle/data/",
+                    "mkdir -p ${PLATFORM_ID_DIR}/bundle/lib/",
+                    "cp ${ENGINE_BUILD_DIR}/icudtl.dat ${PLATFORM_ID_DIR}/bundle/data/",
+                    "cp ${ENGINE_BUILD_DIR}/libflutter_engine.so ${PLATFORM_ID_DIR}/bundle/lib/"
+                ]
+            }
+        ],
+        "do_clean": [
+            {
+                "cwd": "${ENGINE_BUILD_DIR}",
+                "cmds": [
+                    "ninja -t clean"
+                ]
+            }
+        ]
+    }
+}

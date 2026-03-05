@@ -1,0 +1,93 @@
+name: ubuntu-legacy
+# Workflow for running builds on legacy/EOL Ubuntu versions (as required)
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, closed ]
+    paths-ignore:
+      - .github/workflows/macos.yaml
+      - .github/workflows/windows.yaml
+      - .github/workflows/fedora.yml
+      - .github/workflows/ubuntu.yml
+      - '**/*.md'
+  release:
+    types: [ published, created, edited ]
+  workflow_dispatch:
+  schedule:
+    # daily
+    - cron:  '0 0 * * *'
+
+jobs:
+
+  run:
+
+    strategy:
+      matrix:
+        os: [ubuntu:20.04]
+        llvm: [18, 14]
+
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.os }}
+
+    if: "!contains(github.event.pull_request.labels.*.name, 'ci: skip ubuntu-legacy') && !contains(github.event.head_commit.message, '[skip ubuntu-legacy]')"
+
+    steps:
+      - name: Check Environment
+        run: |
+          echo "Running on Ubuntu version: $(lsb_release -d | cut -f2)"
+          echo "Running on architecture: $(uname -m)"
+          echo "Current directory: $(pwd)"
+          echo "Environment variables:"
+          env
+          
+      - name: Set up tools
+        run: |
+          apt-get update -y
+          DEBIAN_FRONTEND=noninteractive apt-get install -yq python3 python3-pip bash cmake sudo
+          python3 -m pip install --upgrade pip
+          apt install python3.8-venv -yq
+
+      - name: Create non-root user
+        run: |
+          groupadd -g 1000 user
+          useradd -m -u 1000 -g user -s /bin/bash user
+          echo "user ALL=(ALL) NOPASSWD: ALL" | tee /etc/sudoers.d/user
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fix workspace permissions
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE
+          sudo chown -R user:user .
+
+      - name: Create workspace
+        shell: bash
+        # Run as non-root user in the container
+        run: |
+          env
+          cd $GITHUB_WORKSPACE
+          pwd; ls -la
+          export DEBIAN_FRONTEND=noninteractive; echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+          sudo -u user bash -c "./flutter_workspace.py --enable=filament"
+          cat ./setup_env.sh
+
+      - name: Test workspace
+        shell: bash
+        run: |
+          env
+          cd $GITHUB_WORKSPACE
+          pwd; ls -la
+          sudo -u user bash -c ". ./setup_env.sh && dart --version"
+
+      - name: Create AOT Tests
+        shell: bash
+        run: |
+          env
+          cd $GITHUB_WORKSPACE
+          pwd; ls -la
+          sudo -u user bash -c ". ./setup_env.sh && \
+          ./flutter_workspace.py --create-aot --app-path=./app/tcna-packages/packages/filament_scene/example/"

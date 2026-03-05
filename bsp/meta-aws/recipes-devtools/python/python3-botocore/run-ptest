@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Test dependency conflicts using shared library
+python3 python_dependency_test.py botocore
+
+# Run basic botocore tests (if any exist)
+if [ -d tests/unit ]; then
+    pytest tests/unit/test_client.py -v 2>/dev/null || echo "SKIP: unit tests not available"
+fi

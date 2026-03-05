@@ -1,0 +1,87 @@
+{
+    "id": "libwebrtc",
+    "load": false,
+    "supported_archs": [
+        "aarch64",
+        "arm64",
+        "x86_64"
+    ],
+    "supported_host_types": [
+        "ubuntu",
+        "fedora"
+    ],
+    "type": "dependency",
+    "env": {
+        "PATH": "${FLUTTER_WORKSPACE}/app/depot_tools:${PATH}",
+        "RUNTIME_MODE": "debug",
+        "LIBWEBRTC_ROOT": "${FLUTTER_WORKSPACE}/app/libwebrtc",
+        "LIBWEBRTC_SRC_DIR_RELATIVE": "src",
+        "LIBWEBRTC_SRC_DIR": "${LIBWEBRTC_ROOT}/${LIBWEBRTC_SRC_DIR_RELATIVE}",
+        "GN_ARGS": "target_os=\\\"linux\\\" target_cpu=\\\"${HOST_ARCH_GOOGLE}\\\" is_debug=true rtc_include_tests=false rtc_use_h264=true ffmpeg_branding=\\\"Chrome\\\" is_component_build=false use_rtti=true use_custom_libcxx=true rtc_enable_protobuf=false",
+        "LIBWEBRTC_BUILD_DIR": "${LIBWEBRTC_SRC_DIR}/out/Linux-Debug",
+        "PATCH_FOLDER": "${FLUTTER_WORKSPACE}/patches/libwebrtc",
+        "VPYTHON_VIRTUALENV_ROOT": "${LIBWEBRTC_ROOT}/.vpython-root"
+    },
+    "src": [
+        {
+            "uri": "https://github.com/flutter-webrtc/flutter-webrtc.git",
+            "branch": "main"
+        },
+        {
+            "uri": "https://github.com/flutter-webrtc/flutter-webrtc-demo.git",
+            "branch": "master"
+        },
+        {
+            "uri": "https://github.com/flutter-webrtc/flutter-webrtc-server.git",
+            "branch": "master"
+        },
+        {
+            "uri": "https://github.com/flutter-webrtc/dart-sip-ua",
+            "branch": "main"
+        }
+    ],
+    "runtime": {
+        "gclient_config": {
+            "path": "${LIBWEBRTC_ROOT}",
+            "name": "${LIBWEBRTC_SRC_DIR_RELATIVE}",
+            "url": "https://github.com/webrtc-sdk/webrtc.git@m125_release",
+            "deps_file": "DEPS",
+            "managed": false,
+            "custom_deps": {},
+            "custom_vars": {}
+        },
+        "post_cmds": [
+            {
+                "cwd": "${LIBWEBRTC_ROOT}",
+                "cmds": [
+                    "gclient sync -D -R -j${HARDWARE_THREADS} -v"
+                ]
+            },
+            {
+                "cwd": "${LIBWEBRTC_SRC_DIR}",
+                "cmds": [
+                    "mkdir -p ${VPYTHON_VIRTUALENV_ROOT}",
+                    "rm -rf libwebrtc || true",
+                    "git reset --hard",
+                    "git apply ${PATCH_FOLDER}/add-libwebrtc-target.patch",
+                    "git clone https://github.com/webrtc-sdk/libwebrtc",
+                    "gn gen \"${LIBWEBRTC_BUILD_DIR}\" --args=\"${GN_ARGS}\""
+                ]
+            },
+            {
+                "cwd": "${LIBWEBRTC_SRC_DIR}",
+                "cmds": [
+                    "${AUTONINJA} -C ${LIBWEBRTC_BUILD_DIR} libwebrtc"
+                ]
+            }
+        ],
+        "do_clean": [
+            {
+                "cwd": "${LIBWEBRTC_BUILD_DIR}",
+                "cmds": [
+                    "ninja -t clean"
+                ]
+            }
+        ]
+    }
+}

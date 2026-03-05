@@ -1,0 +1,58 @@
+{
+  "id": "weston-pi5",
+  "load": false,
+  "supported_archs": [
+    "aarch64",
+    "arm64",
+    "x86_64",
+    "ARM64",
+    "AMD64"
+  ],
+  "supported_host_types": [
+    "darwin",
+    "fedora",
+    "ubuntu",
+    "rhel",
+    "windows"
+  ],
+  "type": "remote",
+  "env": {
+    "DEVICE_HOSTNAME": "raspberrypi5.local",
+    "SCP_PREFIX": "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
+    "SSH_PREFIX": "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes",
+    "PING_CMD": "ping -c 1 -w 400 ${DEVICE_HOSTNAME}",
+    "DELETE_USER_PWD": "${SSH_PREFIX} root@${DEVICE_HOSTNAME} passwd -d weston",
+    "DELETE_APP_FOLDER": "${SSH_PREFIX} weston@${DEVICE_HOSTNAME} rm -rf /tmp/${appName}",
+    "IVI_HOMESCREEN_EXE": "homescreen -b /tmp/${appName}",
+    "CREATE_BUNDLE_FOLDER": "${SSH_PREFIX} weston@${DEVICE_HOSTNAME} mkdir -p /tmp/${appName}/data",
+    "COPY_ASSETS_TO_DEVICE": "${SCP_PREFIX} -r ${localPath}/* weston@${DEVICE_HOSTNAME}:/tmp/${appName}/data/flutter_assets",
+    "COPY_PLATFORM_ID_CONFIG_TO_DEVICE": "${SCP_PREFIX} ${PLATFORM_ID_DIR}/config.toml weston@${DEVICE_HOSTNAME}:/tmp/${appName}/"
+  },
+  "runtime": {
+    "config": {
+      "view": [
+        {
+          "cursor_theme": "DMZ-White",
+          "fullscreen": true
+        }
+      ]
+    }
+  },
+  "overwrite-existing": true,
+  "custom-device": {
+    "id": "weston-pi5",
+    "label": "Raspberry Pi 5",
+    "sdkNameAndVersion": "Raspberry Pi 5 (weston + ivi-homescreen)",
+    "platform": "linux-x64",
+    "enabled": true,
+    "ping": "bash -c \"${PING_CMD}\"",
+    "pingSuccessRegex": "1 packets transmitted, 1 received",
+    "postBuild": "bash -c \"${DELETE_USER_PWD}\"",
+    "install": "bash -c \"${CREATE_BUNDLE_FOLDER} && ${COPY_PLATFORM_ID_CONFIG_TO_DEVICE} && ${COPY_ASSETS_TO_DEVICE}\"",
+    "uninstall": "bash -c \"${DELETE_APP_FOLDER}\"",
+    "runDebug": "bash -c \"${SSH_PREFIX} weston@${DEVICE_HOSTNAME} ${IVI_HOMESCREEN_EXE}\"",
+    "forwardPort": "bash -c \"${SSH_PREFIX} -o ExitOnForwardFailure=yes -L 127.0.0.1:${hostPort}:127.0.0.1:${devicePort} weston@${DEVICE_HOSTNAME} echo 'Port forwarding success'; read\"",
+    "forwardPortSuccessRegex": "Port forwarding success",
+    "screenshot": null
+  }
+}

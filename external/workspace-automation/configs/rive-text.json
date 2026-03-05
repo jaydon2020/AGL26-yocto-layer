@@ -1,0 +1,56 @@
+{
+    "id": "rive-text",
+    "load": true,
+    "supported_archs": [
+        "aarch64",
+        "arm64",
+        "x86_64"
+    ],
+    "supported_host_types": [
+        "fedora",
+        "rhel",
+        "ubuntu"
+    ],
+    "type": "dependency",
+    "env": {
+        "VERSION": "0.8.4",
+        "CC": "${LLVM_BINDIR}/clang",
+        "CXX": "${LLVM_BINDIR}/clang++",
+        "PATH": "${LLVM_BINDIR}:${FLUTTER_WORKSPACE}/.config/flutter_workspace/toolchain-common-ninja:${FLUTTER_WORKSPACE}/.config/flutter_workspace/toolchain-common-cmake/bin:$PATH",
+        "LD_LIBRARY_PATH": "${LLVM_LIBDIR}:${FLUTTER_WORKSPACE}/.config/flutter_workspace/toolchain-common-cmake/lib",
+        "RIVE_TEXT_SRC_DIR": "${FLUTTER_WORKSPACE}/app/rive-common",
+        "RIVE_TEXT_BUILD_DIR": "${RIVE_TEXT_SRC_DIR}/build",
+        "RIVE_TEXT_CMAKE_ARGS": "-D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -D ENABLE_LTO=ON"
+    },
+    "src": [
+        {
+            "uri": "https://github.com/meta-flutter/rive-common.git",
+            "branch": "main"
+        },
+        {
+            "uri": "https://github.com/rive-app/rive-flutter.git",
+            "branch": "master",
+            "rev": "0.8.4"
+        }
+    ],
+    "runtime": {
+        "post_cmds": [
+            {
+                "cwd": "${RIVE_TEXT_BUILD_DIR}",
+                "cmds": [
+                    "bash -c \"rm -rf * | true\"",
+                    "cmake -G Ninja -S ${RIVE_TEXT_SRC_DIR} -B ${RIVE_TEXT_BUILD_DIR} ${RIVE_TEXT_CMAKE_ARGS}",
+                    "cmake --build ${RIVE_TEXT_BUILD_DIR} --config ${CMAKE_BUILD_TYPE} --target rive_text"
+                ]
+            }
+        ],
+        "do_clean": [
+            {
+                "cwd": "${RIVE_TEXT_BUILD_DIR}",
+                "cmds": [
+                    "cmake --build ${RIVE_TEXT_BUILD_DIR} --config ${CMAKE_BUILD_TYPE} --target clean"
+                ]
+            }
+        ]
+    }
+}

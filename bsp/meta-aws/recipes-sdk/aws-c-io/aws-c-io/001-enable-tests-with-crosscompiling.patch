@@ -1,0 +1,23 @@
+From 06bf622cee405aeee837845449fd19ac46da4468 Mon Sep 17 00:00:00 2001
+From: Thomas Roos <throos@amazon.de>
+Date: Mon, 29 Sep 2025 12:51:03 +0000
+Subject: [PATCH] This enable the tests even when crosscompiling.
+
+Upstream-Status: Inappropriate [oe specific]
+---
+ CMakeLists.txt | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 191d1b6..ae2b846 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -255,8 +255,6 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}/"
+         COMPONENT Development)
+ 
+-if (NOT CMAKE_CROSSCOMPILING)
+     if (BUILD_TESTING)
+        add_subdirectory(tests)
+     endif()
+-endif()

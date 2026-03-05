@@ -1,0 +1,23 @@
+From 75dff69bd5595658dfc986cfed4338334b719998 Mon Sep 17 00:00:00 2001
+From: Thomas Roos <throos@amazon.de>
+Date: Mon, 29 Sep 2025 12:51:03 +0000
+Subject: [PATCH] This enable the tests even when crosscompiling.
+
+Upstream-Status: Inappropriate [oe specific]
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5d30c6d..215c184 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -224,7 +224,7 @@ install(FILES ${EXPORT_MODULES}
+         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}/modules"
+         COMPONENT Development)
+ 
+-if (NOT CMAKE_CROSSCOMPILING AND NOT BYO_CRYPTO)
++if (NOT BYO_CRYPTO)
+     include(CTest)
+     if (BUILD_TESTING)
+         add_subdirectory(bin/sha256_profile)

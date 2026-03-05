@@ -1,0 +1,134 @@
+{
+    "id": "flutter-engine",
+    "load": false,
+    "flutter_version": "3.38.3",
+    "supported_archs": [
+        "aarch64",
+        "arm64",
+        "x86_64"
+    ],
+    "supported_host_types": [
+        "ubuntu",
+        "fedora"
+    ],
+    "type": "dependency",
+    "env": {
+        "PATH": "${FLUTTER_WORKSPACE}/app/depot_tools:${PATH}",
+        "RUNTIME_MODE": "debug",
+        "DEPOT_TOOLS": "${FLUTTER_WORKSPACE}/app/depot_tools",
+        "ENGINE_ROOT": "${FLUTTER_WORKSPACE}/flutter",
+        "VPYTHON_VIRTUALENV_ROOT": "${ENGINE_ROOT}/.vpython",
+        "ENGINE_SRC_DIR_RELATIVE": "engine/src",
+        "ENGINE_SRC_DIR": "${ENGINE_ROOT}/${ENGINE_SRC_DIR_RELATIVE}",
+        "ENGINE_BUILD_FLAGS": "--unoptimized --runtime-mode=${RUNTIME_MODE} --no-prebuilt-dart-sdk --embedder-for-target --enable-fontconfig --no-lto --no-goma --no-rbe --no-stripped --enable-unittests --enable-vulkan",
+        "ENGINE_BUILD_DIR": "${ENGINE_SRC_DIR}/out/host_debug_unopt",
+        "GN_ARGS_FILE": "${ENGINE_BUILD_DIR}/args.gn",
+        "GN_ARGS_APPEND": "",
+        "PATCH_FOLDER": "${FLUTTER_WORKSPACE}/patches/flutter-engine"
+    },
+    "src": [],
+    "runtime": {
+        "gclient_config": {
+            "path": "${ENGINE_ROOT}",
+            "managed": false,
+            "name": ".",
+            "url": "https://github.com/flutter/flutter.git",
+            "custom_deps": {},
+            "custom_vars": {
+                "download_android_deps": false,
+                "download_windows_deps": false,
+                "download_linux_deps": true,
+                "download_emsdk": false
+            },
+            "deps_file": "DEPS",
+            "safesync_url": ""
+        },
+        "pre-requisites": {
+            "aarch64": {
+                "ubuntu": {
+                    "cmds": [
+                        "sudo apt-get install -yq pkg-config libfreetype-dev git"
+                    ]
+                }
+            },
+            "x86_64": {
+                "ubuntu": {
+                    "cmds": [
+                        "sudo apt-get install -yq pkg-config libfreetype-dev git"
+                    ]
+                },
+                "fedora": {
+                    "cmds": [
+                        "sudo dnf install -y pkg-config freetype-devel git"
+                    ]
+                }
+            }
+        },
+        "post_cmds": [
+            {
+                "cwd": "${ENGINE_ROOT}",
+                "cmds": [
+                    "gclient sync -R --jobs=${HARDWARE_THREADS}"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_SRC_DIR}",
+                "cmds": [
+                    "git reset --hard",
+                    "git apply ${PATCH_FOLDER}/0001-clang-toolchain.patch",
+                    "git apply ${PATCH_FOLDER}/0003-gn-riscv32-and-riscv64.patch",
+                    "git apply ${PATCH_FOLDER}/0005-fml-fixes-text_input-compiler-warnings.patch",
+                    "git apply ${PATCH_FOLDER}/0006-impeller-unnecessary-virtual-specifier.patch"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_SRC_DIR}/flutter/third_party/abseil-cpp",
+                "cmds": [
+                    "git reset --hard",
+                    "git apply ${PATCH_FOLDER}/flutter/third_party/abseil-cpp/0001-flutter-third_party-abseil-cpp-clang-compiler-warnin.patch"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_SRC_DIR}/flutter/third_party/googletest",
+                "cmds": [
+                    "git reset --hard",
+                    "git apply ${PATCH_FOLDER}/flutter/third_party/googletest/0001-flutter-third_party-googletest-fix-implicit-conversi.patch"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_SRC_DIR}/flutter/third_party/swiftshader",
+                "cmds": [
+                    "git reset --hard",
+                    "git apply ${PATCH_FOLDER}/flutter/third_party/swiftshader/0001-flutter-third_party-swiftshader-pointer-cast-to-void.patch",
+                    "git apply ${PATCH_FOLDER}/flutter/third_party/swiftshader/0002-flutter-third_party-swiftshader-llvm-16.0-required-f.patch"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_SRC_DIR}",
+                "cmds": [
+                    "./flutter/tools/gn ${ENGINE_BUILD_FLAGS}",
+                    "echo ${GN_ARGS_APPEND} >> ${GN_ARGS_FILE}",
+                    "${AUTONINJA} -C ${ENGINE_BUILD_DIR}"
+                ]
+            },
+            {
+                "cwd": "${ENGINE_BUILD_DIR}",
+                "cmds": [
+                    "rm -rf ${PLATFORM_ID_DIR}/bundle | true",
+                    "mkdir -p ${PLATFORM_ID_DIR}/bundle/data/",
+                    "mkdir -p ${PLATFORM_ID_DIR}/bundle/lib/",
+                    "cp ${ENGINE_BUILD_DIR}/icudtl.dat ${PLATFORM_ID_DIR}/bundle/data/",
+                    "cp ${ENGINE_BUILD_DIR}/libflutter_engine.so ${PLATFORM_ID_DIR}/bundle/lib/"
+                ]
+            }
+        ],
+        "do_clean": [
+            {
+                "cwd": "${ENGINE_BUILD_DIR}",
+                "cmds": [
+                    "ninja -t clean"
+                ]
+            }
+        ]
+    }
+}
