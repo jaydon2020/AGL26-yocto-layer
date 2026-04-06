@@ -21,20 +21,21 @@ DEPENDS += "\
     wayland \
     wayland-native \
     wayland-protocols \
+    googletest \
     "
 
 REQUIRED_DISTRO_FEATURES = "wayland"
 
 HOMESCREEN_COMMIT ??= "dd6d9224de807e24f0f9150e5a2e4ee1b896ac3c"
-PLUGINS_COMMIT ??= "2163242e9973336153871ed63b34bb5ed8282145"
+PLUGINS_COMMIT ??= "e52e8fc3cf8038e6d216befbdcc009e85e24082b"
 
 SRC_URI = "\
     gitsm://github.com/toyota-connected/ivi-homescreen.git;protocol=https;branch=v2.0;name=homescreen \
-    gitsm://github.com/toyota-connected/ivi-homescreen-plugins.git;protocol=https;branch=v2.0;name=plugins;destsuffix=${S}/ivi-homescreen-plugins \
+    gitsm://github.com/jaydon2020/ivi-homescreen-plugins.git;protocol=https;branch=v2.0;name=plugins;destsuffix=${S}/ivi-homescreen-plugins \
 "
-SRCREV_FORMAT .= "_homescreen"
+SRCREV_FORMAT = "_homescreen"
 SRCREV_homescreen = "${HOMESCREEN_COMMIT}"
-SRCREV_FORMAT .= "_plugins"
+SRCREV_FORMAT = "_plugins"
 SRCREV_plugins = "${PLUGINS_COMMIT}"
 
 S = "${WORKDIR}/git"
@@ -151,7 +152,7 @@ EXTRA_OECMAKE += "\
     -D ENABLE_STATIC_LINK=OFF \
     -D ENABLE_LTO=ON \
     -D EXE_OUTPUT_NAME=homescreen \
-    -D BUILD_UNIT_TESTS=OFF \
+    -D BUILD_UNIT_TESTS=ON \
     -D BUILD_DOCS=OFF \
 "
 
