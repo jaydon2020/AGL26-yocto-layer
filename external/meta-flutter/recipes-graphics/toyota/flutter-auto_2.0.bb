@@ -21,21 +21,22 @@ DEPENDS += "\
     wayland \
     wayland-native \
     wayland-protocols \
+    googletest \
     "
 
 REQUIRED_DISTRO_FEATURES = "wayland"
 
 HOMESCREEN_COMMIT ??= "dd6d9224de807e24f0f9150e5a2e4ee1b896ac3c"
-PLUGINS_COMMIT ??= "2163242e9973336153871ed63b34bb5ed8282145"
+PLUGINS_COMMIT ??= "5c59e50a4ef4b035d70ecf2fae418ba22844b049"
 
 SRC_URI = "\
     gitsm://github.com/toyota-connected/ivi-homescreen.git;protocol=https;branch=v2.0;name=homescreen \
-    gitsm://github.com/toyota-connected/ivi-homescreen-plugins.git;protocol=https;branch=v2.0;name=plugins;destsuffix=${S}/ivi-homescreen-plugins \
+    gitsm://github.com/jaydon2020/ivi-homescreen-plugins.git;protocol=https;branch=v2.0;name=plugins;destsuffix=${S}/ivi-homescreen-plugins \
 "
-SRCREV_FORMAT .= "_homescreen"
+
 SRCREV_homescreen = "${HOMESCREEN_COMMIT}"
-SRCREV_FORMAT .= "_plugins"
 SRCREV_plugins = "${PLUGINS_COMMIT}"
+SRCREV_FORMAT = "homescreen_plugins"
 
 S = "${WORKDIR}/git"
 
@@ -62,6 +63,8 @@ PACKAGECONFIG ??= "\
     url_launcher \
     desktop_window_linux \
     rive-text \
+    connman_sdbus \
+    connman-tests \
     "
 
 PACKAGECONFIG[backend-wayland-drm] = "-DBUILD_BACKEND_WAYLAND_DRM=ON,-DBUILD_BACKEND_WAYLAND_DRM=OFF"
@@ -129,6 +132,7 @@ PACKAGECONFIG[go_router] = "-DBUILD_PLUGIN_GO_ROUTER=ON,-DBUILD_PLUGIN_GO_ROUTER
 PACKAGECONFIG[google_sign_in] = "-DBUILD_PLUGIN_GOOGLE_SIGN_IN=ON,-DBUILD_PLUGIN_GOOGLE_SIGN_IN=OFF, curl"
 PACKAGECONFIG[pdf] = "-DBUILD_PLUGIN_PDF=ON, -DBUILD_PLUGIN_PDF=OFF, pdfium"
 PACKAGECONFIG[flatpak] = "-DBUILD_PLUGIN_FLATPAK=ON, -DBUILD_PLUGIN_FLATPAK=OFF, flatpak"
+PACKAGECONFIG[connman_sdbus] = "-DBUILD_PLUGIN_CONNMAN_SDBUS=ON, -DBUILD_PLUGIN_CONNMAN_SDBUS=OFF, sdbus-c++ glib-2.0"
 PACKAGECONFIG[camera] = "-DBUILD_PLUGIN_CAMERA=ON, -DBUILD_PLUGIN_CAMERA=OFF, libcamera"
 PACKAGECONFIG[camera-pipewire] = "-DBUILD_PLUGIN_CAMERA_PIPEWIRE=ON -DBUILD_PLUGIN_CAMERA=OFF, \
     -DBUILD_PLUGIN_CAMERA_PIPEWIRE=OFF, libcamera pipewire"
@@ -147,16 +151,24 @@ PACKAGECONFIG[sentry] = "\
 PACKAGECONFIG[dlt] = "-DENABLE_DLT=ON, -DENABLE_DLT=OFF"
 PACKAGECONFIG[sanitize] = "-DSANITIZE_ADDRESS=ON, -DSANITIZE_ADDRESS=OFF"
 
+PACKAGECONFIG[connman-tests] = "-DBUILD_UNIT_TESTS_CONNMAN=ON, -DBUILD_UNIT_TESTS_CONNMAN=OFF, googletest"
+
 PACKAGECONFIG[examples] = "-DBUILD_EXAMPLES=ON, -DBUILD_EXAMPLES=OFF"
 PACKAGECONFIG[verbose] = "-DCMAKE_BUILD_TYPE=Debug -DDEBUG_PLATFORM_MESSAGES=ON, -DDEBUG_PLATFORM_MESSAGES=OFF"
+
+
+LDFLAGS += " -lstdc++"
+# Inside the googletest recipe or a bbappend
+EXTRA_OECMAKE:append = " ${@bb.utils.contains('TOOLCHAIN', 'clang', '-DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++', '', d)}"
+DEPENDS += "mesa"
 
 EXTRA_OECMAKE += "\
     -D PLUGINS_DIR=${S}/ivi-homescreen-plugins/plugins \
     -D ENABLE_STATIC_LINK=OFF \
     -D ENABLE_LTO=ON \
     -D EXE_OUTPUT_NAME=${PN} \
-    -D BUILD_UNIT_TESTS=OFF \
     -D BUILD_DOCS=OFF \
+    -D BUILD_UNIT_TESTS_CONNMAN=OFF \
 "
 
 RDEPENDS:${PN} += "\
