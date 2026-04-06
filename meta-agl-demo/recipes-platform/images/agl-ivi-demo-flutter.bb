@@ -16,5 +16,6 @@ AGL_APPS_INSTALL += " \
     ondemandnavi \
     ${MUSICDATA} \
     gsoc26-flutter-quiz \
-    agl-test-wifi \
+    ble-flutter \
+    flutter-ble-scanner \
 "
